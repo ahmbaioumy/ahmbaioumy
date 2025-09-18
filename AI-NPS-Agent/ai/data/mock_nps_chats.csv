@@ -1,0 +1,11 @@
+date&time,chat_ID,Chat_Transcript,NPS score,chat_Reason_CWC,M1,M2,M3,Segment,Lang,HandledAgentlogin,HandledAgentsite
+2025-06-01 10:01:00,CHAT001,"I'm very upset with the delay. This is unacceptable and I'm thinking to cancel.",4,Delay,Shipping,Delivery,Policy,Consumer,en,agent1,SiteA
+2025-06-01 10:05:00,CHAT002,"Thanks for the quick help! Everything works perfectly now.",10,Support,Tech,Resolution,Followup,Consumer,en,agent2,SiteA
+2025-06-02 09:20:00,CHAT003,"It was okay, but I had to wait on hold for a bit.",7,Wait,Support,Queue,Time,SMB,en,agent3,SiteB
+2025-06-03 14:45:00,CHAT004,"This is the worst experience. No one is helpful. I want a refund.",2,Refund,Support,Policy,Escalation,Enterprise,en,agent4,SiteB
+2025-06-04 11:12:00,CHAT005,"Appreciate your patience. The issue is resolved and I'm happy now!",9,Resolution,Tech,Fix,Update,Consumer,en,agent2,SiteA
+2025-06-05 15:30:00,CHAT006,"Not great, the product was broken and support was slow.",5,Quality,Product,Support,Delay,SMB,en,agent5,SiteC
+2025-06-06 16:10:00,CHAT007,"Amazing service, very courteous and fast.",9,Service,Support,Speed,Manners,Consumer,en,agent6,SiteC
+2025-06-07 18:22:00,CHAT008,"I feel ignored. Why is this taking so long?",3,Delay,Support,Queue,Time,Consumer,en,agent1,SiteA
+2025-06-08 12:00:00,CHAT009,"It's fine now, thanks for resolving it.",8,Resolution,Tech,Fix,Followup,SMB,en,agent3,SiteB
+2025-06-09 13:33:00,CHAT010,"Terrible service. I'm leaving for a competitor.",1,Churn,Service,Competitor,Escalation,Consumer,en,agent7,SiteD
