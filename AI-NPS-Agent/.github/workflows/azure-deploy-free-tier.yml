@@ -1,0 +1,130 @@
+name: Deploy AI NPS Assistant to Azure Free Tier
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+  AZURE_FUNCTIONAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+  AZURE_FUNCTIONAPP_NAME: ${{ secrets.AZURE_FUNCTIONAPP_NAME }}
+  AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+
+jobs:
+  build-and-deploy-frontend:
+    runs-on: ubuntu-latest
+    name: Build and Deploy Frontend
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          lfs: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "/frontend"
+          api_location: "/azure-functions"
+          output_location: "dist"
+          skip_app_build: true
+
+  build-and-deploy-backend:
+    runs-on: ubuntu-latest
+    name: Build and Deploy Backend
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd azure-functions
+          pip install -r requirements.txt
+
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: azure-functions
+          publish-profile: ${{ env.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+
+  create-azure-resources:
+    runs-on: ubuntu-latest
+    name: Create Azure Resources (Free Tier)
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create Resource Group
+        run: |
+          az group create --name ai-nps-assistant-rg --location eastus
+
+      - name: Create Static Web App
+        run: |
+          az staticwebapp create \
+            --name ai-nps-frontend-${{ github.run_number }} \
+            --resource-group ai-nps-assistant-rg \
+            --location eastus \
+            --output-location "frontend/dist" \
+            --api-location "azure-functions" \
+            --source-branch "main" \
+            --app-location "frontend" \
+            --sku Free
+
+      - name: Create Function App
+        run: |
+          # Create storage account
+          az storage account create \
+            --name ainpsstorage${{ github.run_number }} \
+            --location eastus \
+            --resource-group ai-nps-assistant-rg \
+            --sku Standard_LRS
+
+          # Create function app
+          az functionapp create \
+            --resource-group ai-nps-assistant-rg \
+            --consumption-plan-location eastus \
+            --runtime python \
+            --runtime-version 3.10 \
+            --functions-version 4 \
+            --name ai-nps-backend-${{ github.run_number }} \
+            --storage-account ainpsstorage${{ github.run_number }} \
+            --os-type Linux
+
+      - name: Output URLs
+        run: |
+          echo "Frontend URL: https://ai-nps-frontend-${{ github.run_number }}.azurestaticapps.net"
+          echo "Backend URL: https://ai-nps-backend-${{ github.run_number }}.azurewebsites.net"
