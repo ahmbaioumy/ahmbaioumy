@@ -1,0 +1,11 @@
+{
+  "model_name": "logistic_regression",
+  "accuracy": 1.0,
+  "training_samples": 40,
+  "test_samples": 10,
+  "features": "tfidf_ngrams",
+  "class_distribution": [
+    23,
+    27
+  ]
+}
