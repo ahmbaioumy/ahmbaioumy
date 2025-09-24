@@ -1,3 +1,5 @@
+azure-functions==1.18.0
+azure-functions-worker==1.0.0
 fastapi==0.115.0
 uvicorn==0.30.6
 python-multipart==0.0.9
@@ -17,6 +19,6 @@ httpx==0.27.2
 starlette==0.38.2
 jinja2==3.1.4
 python-dotenv==1.0.1
-# Azure SQL support
-pyodbc==5.0.1
-aioodbc==0.4.0
+# Azure SQL support (optional for free tier)
+# pyodbc==5.0.1
+# aioodbc==0.4.0

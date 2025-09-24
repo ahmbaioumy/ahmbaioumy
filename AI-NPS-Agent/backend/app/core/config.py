@@ -16,6 +16,20 @@ class Settings:
         self.acs_connection_string: str | None = os.getenv("ACS_CONNECTION_STRING")
         self.azure_sql_connection_string: str | None = os.getenv("AZURE_SQL_CONNECTION_STRING")
         self.allowed_origins: list[str] = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+        
+        # Azure Functions specific settings
+        self.is_azure_functions: bool = os.getenv("FUNCTIONS_WORKER_RUNTIME") is not None
+        self.function_app_name: str = os.getenv("FUNCTIONS_APP_NAME", "ai-nps-assistant")
+        
+        # Database connection logic
+        self.database_url: str = self._get_database_url()
+    
+    def _get_database_url(self) -> str:
+        """Get database URL based on environment"""
+        if self.azure_sql_connection_string and self.env == "production":
+            return self.azure_sql_connection_string
+        else:
+            return f"sqlite:///{self.sqlite_db_path}"
 
 
 @lru_cache(maxsize=1)
