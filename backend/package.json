@@ -1,0 +1,36 @@
+{
+  "name": "nps-hero-backend",
+  "version": "1.0.0",
+  "description": "NPS Hero Backend - Azure Functions",
+  "main": "index.js",
+  "scripts": {
+    "start": "func start",
+    "build": "npm run build:production",
+    "build:production": "npm ci --only=production",
+    "test": "jest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@azure/openai": "^1.0.0-beta.8",
+    "@azure/cosmos": "^4.0.0",
+    "@azure/storage-blob": "^12.17.0",
+    "@azure/signalr": "^1.0.0",
+    "@azure/msal-node": "^2.5.0",
+    "axios": "^1.5.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "joi": "^17.9.0",
+    "moment": "^2.29.4",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@azure/functions": "^4.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0",
+    "nodemon": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
