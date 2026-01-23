@@ -7,6 +7,7 @@ from app.api.routes_chat import router as chat_router
 from app.api.routes_predict import router as predict_router
 from app.api.routes_auth import router as auth_router
 from app.api.routes_manager import router as manager_router
+from app.api.routes_prayer import router as prayer_router
 from app.services.predictor import PredictorService
 import uvicorn
 
@@ -39,6 +40,7 @@ async def health() -> dict:
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(predict_router, prefix="/predict", tags=["predict"])
 app.include_router(manager_router, prefix="/manager", tags=["manager"])
+app.include_router(prayer_router, prefix="/prayer", tags=["prayer"])
 app.include_router(chat_router, tags=["chat"])  # contains /ws/chat
 
 
