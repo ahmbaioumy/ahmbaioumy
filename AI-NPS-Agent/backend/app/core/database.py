@@ -48,7 +48,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def create_all_tables() -> None:
     assert engine is not None
-    from app.models import ChatSession, ChatMessage, NPSRecord  # noqa: F401
+    from app.models import ChatSession, ChatMessage, NPSRecord, PrayerSettings, PrayerEntry, DevotionEntry  # noqa: F401
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

@@ -3,6 +3,7 @@ import { AppBar, Toolbar, Typography, Container, Box, Button, Snackbar, Alert, T
 import { useAuthStore } from './store/auth'
 import ChatView from './components/ChatView'
 import ManagerDashboard from './components/ManagerDashboard'
+import PrayerDashboard from './components/PrayerDashboard'
 
 const App: React.FC = () => {
   const { token, loginMock, logout, role } = useAuthStore()
@@ -23,7 +24,7 @@ const App: React.FC = () => {
     <Box>
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>AI NPS Assistant</Typography>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>Worship Achievement System</Typography>
           {token ? (
             <>
               <Typography sx={{ mr: 2 }}>{role}</Typography>
@@ -40,10 +41,12 @@ const App: React.FC = () => {
             <Tabs value={tab} onChange={(_, v) => setTab(v)}>
               <Tab label="Chat" />
               <Tab label="Manager" />
+              <Tab label="Prayer" />
             </Tabs>
             <Box sx={{ mt: 2 }}>
               {tab === 0 && <ChatView />}
               {tab === 1 && <ManagerDashboard />}
+              {tab === 2 && <PrayerDashboard />}
             </Box>
           </>
         ) : (
