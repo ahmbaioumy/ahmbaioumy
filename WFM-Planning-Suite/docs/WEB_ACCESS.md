@@ -1,53 +1,39 @@
 # How to Use the Web App (No Technical Skills Needed)
 
-## Your app link (after setup)
-
-Once the project is merged and GitHub Pages is enabled, open:
+## Your app is live — open this link
 
 **https://ahmbaioumy.github.io/ahmbaioumy/wfm-app/**
 
-Bookmark this link — that's your app.
+Bookmark it. No install needed.
 
 ---
 
-## One-time setup (ask GitHub or IT once)
+## How to test it (5 minutes)
 
-1. **Merge the pull request** on GitHub (the green "Merge" button on PR #5)
-2. Go to your repo: https://github.com/ahmbaioumy/ahmbaioumy
-3. Click **Settings** → **Pages** (left menu)
-4. Under **Build and deployment**, set **Source** to **GitHub Actions**
-5. Wait 2–5 minutes for the first deploy to finish
-6. Open the link above in Chrome or Edge
-
----
-
-## How to test the app
-
-1. Open the link in your browser
-2. Click **Browse File** on the Upload step
-3. Or download the sample file first: click **sample_data.csv** on that screen
-4. Click **Next** through all 8 steps:
+1. Open the link above in **Chrome** or **Edge**
+2. On **Upload**, click **Browse File**
+   - Or click **sample_data.csv** on that screen to download test data, then upload it
+3. Click **Next** through all 8 steps:
    - Upload → Profile → Cleanse → Forecast → Size → Schedule → Simulate → Report
-5. On the last step, click **Export to Excel** to save your report
+4. On **Report**, click **Export to Excel**
 
-**Success =** you uploaded data, clicked through all steps, and downloaded an Excel report.
-
----
-
-## Important notes
-
-- **No install needed** — it runs in your browser like a website
-- **Your data stays private** — files are processed on your computer in the browser, not uploaded to a server
-- **Works on phone?** — possible but a computer is easier for CSV files
-- **Internet required** — only to open the website the first time; calculations happen locally in the browser
+If you get an Excel file, everything works.
 
 ---
 
-## If the link doesn't work yet
+## Good to know
 
-The link works only **after**:
-1. The pull request is merged to `main`
-2. GitHub Pages is set to **GitHub Actions** (step above)
-3. The deploy workflow finishes (check **Actions** tab on GitHub — green checkmark)
+| Question | Answer |
+|----------|--------|
+| Do I need to install anything? | **No** |
+| Is my data uploaded to the internet? | **No** — it stays in your browser |
+| Does it cost money? | **No** — free on GitHub |
+| Can I use my phone? | Possible, but a computer is easier for CSV files |
 
-If you need help, share the **Actions** tab screenshot with whoever helps you on GitHub.
+---
+
+## If the link doesn't open
+
+Wait 2–3 minutes and try again (GitHub may still be updating).
+
+If it still fails after 10 minutes, open https://github.com/ahmbaioumy/ahmbaioumy/actions and check that the latest **Deploy Web App to GitHub Pages** run has a green checkmark.
