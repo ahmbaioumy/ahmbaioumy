@@ -8,3 +8,5 @@ dist/
 build/
 *.xlsx
 .wfm-planning-suite/
+web/node_modules/
+web/dist/

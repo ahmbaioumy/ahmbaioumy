@@ -1,6 +1,15 @@
 # WFM Planning Suite
 
-Offline-first, air-gapped-capable **PySide6 desktop application** for contact center workforce management planning. Takes historical interaction data through a guided pipeline — upload, cleanse, forecast, size (Erlang), schedule, simulate, and report — with every number traceable to its formula and inputs.
+Workforce management planning for contact centers — upload historical data, forecast demand, size staffing with Erlang, build schedules, and export reports.
+
+**Two ways to use it:**
+
+| Version | Best for | How to open |
+|---------|----------|-------------|
+| **Web app** (recommended) | Most users — no install | https://ahmbaioumy.github.io/ahmbaioumy/ |
+| **Desktop app** | Offline / air-gapped environments | Python + PySide6 (see below) |
+
+See [docs/WEB_ACCESS.md](docs/WEB_ACCESS.md) for a **simple, non-technical guide** to the web app.
 
 See [PRD.md](PRD.md) for the full product requirements document.
 
@@ -10,7 +19,19 @@ See [PRD.md](PRD.md) for the full product requirements document.
 Upload → Profile → Cleanse → Forecast → Size → Schedule → Simulate → Report
 ```
 
-## Quick Start
+## Web App (GitHub Pages)
+
+```bash
+cd WFM-Planning-Suite/web
+npm install
+npm run dev        # local preview at http://localhost:5173
+npm run build      # production build
+```
+
+The site deploys automatically to GitHub Pages when changes merge to `main`.
+Enable **Settings → Pages → Source: GitHub Actions** on the repo (one-time).
+
+## Desktop App
 
 ```bash
 cd WFM-Planning-Suite
