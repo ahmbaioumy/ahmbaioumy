@@ -33,22 +33,23 @@ jobs:
           npm ci
           npm run build
 
-      - name: Copy build to site root (legacy GitHub Pages)
+      - name: Copy build to wfm-app folder
         run: |
-          cp WFM-Planning-Suite/web/dist/index.html .
-          cp -r WFM-Planning-Suite/web/dist/assets .
-          cp WFM-Planning-Suite/web/dist/favicon.svg .
-          cp WFM-Planning-Suite/web/dist/sample_data.csv .
+          rm -rf wfm-app
+          mkdir -p wfm-app
+          cp -r WFM-Planning-Suite/web/dist/* wfm-app/
           touch .nojekyll
 
       - name: Commit and push static site
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.html assets/ favicon.svg sample_data.csv .nojekyll
+          git add wfm-app/ .nojekyll
+          git rm -rf --ignore-unmatch index.html assets favicon.svg sample_data.csv 2>/dev/null || true
+          git add -u
           if git diff --staged --quiet; then
             echo "No site changes to deploy"
             exit 0
           fi
-          git commit -m "Deploy WFM web app to GitHub Pages [skip ci]"
+          git commit -m "Deploy WFM web app to wfm-app/ [skip ci]"
           git push

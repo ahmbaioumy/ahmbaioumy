@@ -4,7 +4,7 @@
 
 Once the project is merged and GitHub Pages is enabled, open:
 
-**https://ahmbaioumy.github.io/ahmbaioumy/**
+**https://ahmbaioumy.github.io/ahmbaioumy/wfm-app/**
 
 Bookmark this link — that's your app.
 
