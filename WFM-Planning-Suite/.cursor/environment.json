@@ -1,0 +1,6 @@
+{
+  "snapshot": "POPULATED_FROM_IMAGE",
+  "install": "cd WFM-Planning-Suite && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
+  "start": "cd WFM-Planning-Suite && .venv/bin/pytest tests/ -m tier1 -q",
+  "terminals": []
+}
