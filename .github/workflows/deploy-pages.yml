@@ -9,20 +9,15 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: pages-deploy
   cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: WFM-Planning-Suite/web
     steps:
       - uses: actions/checkout@v4
 
@@ -32,23 +27,28 @@ jobs:
           cache: npm
           cache-dependency-path: WFM-Planning-Suite/web/package-lock.json
 
-      - name: Install and build
+      - name: Build web app
+        working-directory: WFM-Planning-Suite/web
         run: |
           npm ci
           npm run build
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: WFM-Planning-Suite/web/dist
+      - name: Copy build to site root (legacy GitHub Pages)
+        run: |
+          cp WFM-Planning-Suite/web/dist/index.html .
+          cp -r WFM-Planning-Suite/web/dist/assets .
+          cp WFM-Planning-Suite/web/dist/favicon.svg .
+          cp WFM-Planning-Suite/web/dist/sample_data.csv .
+          touch .nojekyll
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Commit and push static site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html assets/ favicon.svg sample_data.csv .nojekyll
+          if git diff --staged --quiet; then
+            echo "No site changes to deploy"
+            exit 0
+          fi
+          git commit -m "Deploy WFM web app to GitHub Pages [skip ci]"
+          git push
