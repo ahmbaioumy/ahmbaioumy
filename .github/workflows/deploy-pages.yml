@@ -5,19 +5,25 @@ on:
     branches: [main]
     paths:
       - 'WFM-Planning-Suite/web/**'
+      - 'wfm-app/**'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-  group: pages-deploy
+  group: pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: WFM-Planning-Suite/web
     steps:
       - uses: actions/checkout@v4
 
@@ -27,29 +33,24 @@ jobs:
           cache: npm
           cache-dependency-path: WFM-Planning-Suite/web/package-lock.json
 
-      - name: Build web app
-        working-directory: WFM-Planning-Suite/web
+      - name: Install and build
         run: |
           npm ci
           npm run build
+          touch dist/.nojekyll
 
-      - name: Copy build to wfm-app folder
-        run: |
-          rm -rf wfm-app
-          mkdir -p wfm-app
-          cp -r WFM-Planning-Suite/web/dist/* wfm-app/
-          touch .nojekyll
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: WFM-Planning-Suite/web/dist
 
-      - name: Commit and push static site
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add wfm-app/ .nojekyll
-          git rm -rf --ignore-unmatch index.html assets favicon.svg sample_data.csv 2>/dev/null || true
-          git add -u
-          if git diff --staged --quiet; then
-            echo "No site changes to deploy"
-            exit 0
-          fi
-          git commit -m "Deploy WFM web app to wfm-app/ [skip ci]"
-          git push
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
