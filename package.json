@@ -1,0 +1,20 @@
+{
+  "name": "nps-hero",
+  "version": "1.0.0",
+  "description": "NPS Hero Customer Service AI Chat System",
+  "main": "index.js",
+  "scripts": {
+    "start": "cd frontend && npm start",
+    "build": "cd frontend && npm run build",
+    "install-frontend": "cd frontend && npm install",
+    "install-backend": "cd backend && npm install",
+    "install-all": "npm run install-frontend && npm run install-backend",
+    "deploy": "az deployment group create --resource-group rg-nps-assistant --template-file azure-deploy.json"
+  },
+  "keywords": ["nps", "customer-service", "ai", "chat", "azure"],
+  "author": "NPS Hero Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}

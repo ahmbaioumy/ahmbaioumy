@@ -1,0 +1,288 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "type": "string",
+      "defaultValue": "npsHero",
+      "metadata": {
+        "description": "Name of the application"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "East US",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "textAnalyticsSku": {
+      "type": "string",
+      "defaultValue": "S",
+      "allowedValues": ["F0", "S"],
+      "metadata": {
+        "description": "SKU for Text Analytics service"
+      }
+    },
+    "cosmosDbThroughput": {
+      "type": "int",
+      "defaultValue": 400,
+      "metadata": {
+        "description": "Throughput for Cosmos DB"
+      }
+    }
+  },
+  "variables": {
+    "functionAppName": "[concat(parameters('appName'), 'Backend')]",
+    "staticWebAppName": "[concat(parameters('appName'), 'Frontend')]",
+    "storageAccountName": "[concat(parameters('appName'), 'storage', uniqueString(resourceGroup().id))]",
+    "cosmosDbName": "[concat(parameters('appName'), 'DB')]",
+    "textAnalyticsName": "[concat(parameters('appName'), 'TextAnalytics')]",
+    "signalRName": "[concat(parameters('appName'), 'SignalR')]",
+    "appInsightsName": "[concat(parameters('appName'), 'AppInsights')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-09-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "accessTier": "Hot"
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2021-10-15",
+      "name": "[variables('cosmosDbName')]",
+      "location": "[parameters('location')]",
+      "kind": "GlobalDocumentDB",
+      "properties": {
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session"
+        },
+        "locations": [
+          {
+            "locationName": "[parameters('location')]",
+            "failoverPriority": 0
+          }
+        ],
+        "databaseAccountOfferType": "Standard",
+        "enableAutomaticFailover": false,
+        "enableMultipleWriteLocations": false
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
+      "apiVersion": "2021-10-15",
+      "name": "[concat(variables('cosmosDbName'), '/npsHeroDB')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName'))]"
+      ],
+      "properties": {
+        "resource": {
+          "id": "npsHeroDB"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2021-10-15",
+      "name": "[concat(variables('cosmosDbName'), '/npsHeroDB/chatLogs')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', variables('cosmosDbName'), 'npsHeroDB')]"
+      ],
+      "properties": {
+        "resource": {
+          "id": "chatLogs",
+          "partitionKey": {
+            "paths": ["/id"],
+            "kind": "Hash"
+          },
+          "indexingPolicy": {
+            "indexingMode": "consistent",
+            "includedPaths": [
+              {
+                "path": "/*"
+              }
+            ],
+            "excludedPaths": [
+              {
+                "path": "/\"_etag\"/?"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2021-10-01",
+      "name": "[variables('textAnalyticsName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('textAnalyticsSku')]"
+      },
+      "kind": "TextAnalytics",
+      "properties": {
+        "customSubDomainName": "[variables('textAnalyticsName')]"
+      }
+    },
+    {
+      "type": "Microsoft.SignalRService/SignalR",
+      "apiVersion": "2022-02-01",
+      "name": "[variables('signalRName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_S1",
+        "tier": "Standard",
+        "capacity": 1
+      },
+      "properties": {
+        "features": [
+          {
+            "flag": "ServiceMode",
+            "value": "Default"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[variables('appInsightsName')]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "Request_Source": "rest"
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2021-03-01",
+      "name": "[concat(variables('functionAppName'), 'Plan')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Y1",
+        "tier": "Dynamic"
+      },
+      "properties": {
+        "name": "[concat(variables('functionAppName'), 'Plan')]",
+        "computeMode": "Dynamic"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2021-03-01",
+      "name": "[variables('functionAppName')]",
+      "location": "[parameters('location')]",
+      "kind": "functionapp",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', concat(variables('functionAppName'), 'Plan'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+      ],
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', concat(variables('functionAppName'), 'Plan'))]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';EndpointSuffix=', environment().suffixes.storage, ';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2021-09-01').keys[0].value)]"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "node"
+            },
+            {
+              "name": "WEBSITE_NODE_DEFAULT_VERSION",
+              "value": "~18"
+            },
+            {
+              "name": "TEXT_ANALYTICS_ENDPOINT",
+              "value": "[concat('https://', variables('textAnalyticsName'), '.cognitiveservices.azure.com/')]"
+            },
+            {
+              "name": "TEXT_ANALYTICS_KEY",
+              "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', variables('textAnalyticsName')), '2021-10-01').key1]"
+            },
+            {
+              "name": "COSMOS_DB_ENDPOINT",
+              "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName'))).documentEndpoint]"
+            },
+            {
+              "name": "COSMOS_DB_KEY",
+              "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName')), '2021-10-15').primaryMasterKey]"
+            },
+            {
+              "name": "COSMOS_DB_DATABASE",
+              "value": "npsHeroDB"
+            },
+            {
+              "name": "COSMOS_DB_CONTAINER",
+              "value": "chatLogs"
+            },
+            {
+              "name": "STORAGE_CONNECTION_STRING",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';EndpointSuffix=', environment().suffixes.storage, ';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2021-09-01').keys[0].value)]"
+            },
+            {
+              "name": "SIGNALR_CONNECTION_STRING",
+              "value": "[listKeys(resourceId('Microsoft.SignalRService/SignalR', variables('signalRName')), '2022-02-01').primaryConnectionString]"
+            },
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName'))).InstrumentationKey]"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName'))).ConnectionString]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2022-03-01",
+      "name": "[variables('staticWebAppName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "repositoryUrl": "https://github.com/your-username/nps-hero",
+        "branch": "main",
+        "buildProperties": {
+          "appLocation": "/frontend",
+          "apiLocation": "/backend",
+          "outputLocation": "build"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "functionAppName": {
+      "type": "string",
+      "value": "[variables('functionAppName')]"
+    },
+    "staticWebAppName": {
+      "type": "string",
+      "value": "[variables('staticWebAppName')]"
+    },
+    "cosmosDbEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName'))).documentEndpoint]"
+    },
+    "textAnalyticsEndpoint": {
+      "type": "string",
+      "value": "[concat('https://', variables('textAnalyticsName'), '.cognitiveservices.azure.com/')]"
+    },
+    "signalREndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.SignalRService/SignalR', variables('signalRName'))).hostName]"
+    }
+  }
+}
