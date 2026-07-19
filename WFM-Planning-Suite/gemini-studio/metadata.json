@@ -1,0 +1,6 @@
+{
+  "name": "Workforce Planner",
+  "description": "An end-to-end Contact Center Workforce Planning platform with data cleansing, multi-model forecasting, Erlang sizing (A, B, C, Blended, Workload), capacity hiring plans, shift scheduling, performance simulations, and cost reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -10,3 +10,4 @@ build/
 .wfm-planning-suite/
 web/node_modules/
 web/dist/
+gemini-studio-export.zip

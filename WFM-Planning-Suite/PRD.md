@@ -2,17 +2,18 @@
 
 **Product name:** Workforce Studio — Planner Edition  
 **Version reference:** 2.7.3 (AI Studio prototype)  
-**Status:** Draft v2.0  
+**Status:** Draft v2.1  
 **Last updated:** 2026-07-19  
 
 **Source & provenance**
 
-| Source | URL | Access |
+| Source | URL | Status |
 |--------|-----|--------|
-| AI Studio app (Gemini conversation host) | https://ai.studio/apps/024f1936-c4a8-404f-8ec0-61b485605607 | Requires Google authentication — conversation not directly readable |
-| Live prototype | https://workforce-planner.ai.studio | Publicly accessible — primary source for this PRD |
+| Gemini chat (AI Studio) | https://ai.studio/apps/024f1936-c4a8-404f-8ec0-61b485605607 | Read — requirements captured in Section 16 |
+| Live prototype | https://workforce-planner.ai.studio | Verified — all 8 workflow steps explored |
+| Reference source code | `WFM-Planning-Suite/gemini-studio/` | Downloaded from AI Studio export (33 files) |
 
-This PRD captures the product vision, workflow, and feature specifications implied by the Gemini-built prototype at **workforce-planner.ai.studio**. Where the prototype and the existing `WFM-Planning-Suite` codebase diverge, this document reflects the **prototype** as the target product definition.
+This PRD synthesizes the **Gemini conversation**, the **live prototype**, and the **exported reference implementation**. Where the existing `WFM-Planning-Suite` repo (`web/`, `src/`) diverges, this document reflects the Gemini-built product as the target definition.
 
 ---
 
@@ -87,8 +88,9 @@ A WFM analyst configures channel SLAs and business windows, uploads (or generate
 3. **No silent fallbacks** — default AHT, flat intraday patterns, or degraded forecast methods are visibly labeled in UI and exports.
 4. **Offline by construction** — zero runtime network calls in the shipped product.
 5. **Progressive disclosure** — sensible defaults and preset templates for novices; full algorithm selection for power users.
-6. **Verify before proceed** — each pipeline gate requires explicit user certification (orange warning banners) before downstream modules unlock.
+6. **Hybrid certification** — critical computation steps (forecast, sizing, simulation, cost) require explicit user review via orange "Please Review & Certify" banners; profile setup and data ingestion auto-certify via `useEffect` observers when valid state is detected (per Gemini chat).
 7. **Recommendation, not mandate** — system suggests IQR, Prophet, Erlang C, etc., but the planner can override.
+8. **Navigation-bound state saving** — clicking "Continue to Forecasting" (and equivalent CTAs) must propagate cleansed volume and AHT into the global forecasting model without data loss.
 
 ---
 
@@ -715,10 +717,160 @@ This gap analysis defines the implementation backlog for aligning the repo with 
 ## 15. Open Questions
 
 1. **Platform priority:** Should implementation target the web app (AI Studio prototype style) or continue PySide6 desktop-first? This PRD follows the web prototype; desktop remains a secondary deployment target.
-2. **Outbound Campaigns channel:** Full SLA defaults not captured in prototype exploration — confirm with product owner.
-3. **Gemini conversation details:** Direct chat transcript unavailable (auth required). Any requirements discussed only in chat and not reflected in the prototype should be added manually.
-4. **Erlang X / chat concurrency:** Blended Task Concurrency model exists in prototype UI — confirm mathematical specification before implementation.
-5. **Currency/locale:** Prototype uses USD; confirm whether multi-currency is needed.
+2. **Erlang X / chat concurrency:** Blended Task Concurrency model exists in prototype UI — confirm mathematical specification before implementation.
+3. **Currency/locale:** Prototype uses USD; confirm whether multi-currency is needed.
+4. **Forecast results popup:** Chat requests a confirmation popup after forecast run — not yet implemented in reference source; confirm design.
+
+---
+
+## 16. Gemini Chat Requirements (Authoritative Product Intent)
+
+Captured from the AI Studio conversation on 2026-07-19. These items reflect **what the product owner asked Gemini to build**, including features not yet in the reference source.
+
+### 16.1 Auto-Validation & Flow Control
+
+| Step | Auto-certify trigger | Notes |
+|------|---------------------|-------|
+| 0 — Profile Setup | On system boot / component mount | `useEffect` sets `certifiedSteps[0] = true` |
+| 1 — Data Ingestion & Cleansing | Valid CSV uploaded or sample data generated | Unlocks Forecasting instantly |
+| 2–4 — Forecast / Sizing | Manual certify banners remain | Orange gate before next step |
+| 5 — Capacity & Hiring | Long-term hiring schedule calculated | Auto-certified when plan exists |
+| 6 — Shift Scheduling | Shift allocations optimized | Auto-certified when roster exists |
+
+Manual certification checkboxes were **removed** per chat — replaced by dynamic state observers.
+
+### 16.2 CSV Ingestion — Flexible Schema
+
+- **`interval` column is optional.** Parser fuzzy-matches headers: `time`, `slot`, `hour`, `interval`.
+- If omitted, default interval `'00:00'` is assigned — records still cleanse and size correctly.
+- **Date format validation** required during cleansing (chat: "check the date formate for cleansing").
+- **Before/after display:** cleansing UI must show **raw vs cleansed** numbers side-by-side in tables, charts, and outlier registry.
+
+### 16.3 Dynamic Imputation Engine
+
+Post-anomaly treatment selector (radio panel) connected to `detectAndCleanseAnomalies`:
+
+| Method | Behavior |
+|--------|----------|
+| Rolling Mean (Average) | Average across adjacent interval boundaries |
+| Rolling Median | Local median; resistant to high-volatility spikes |
+| Forward Fill | Last valid non-anomalous telemetry reading |
+| Constant Zero Drop | Anomalous intervals set to zero volume |
+| Keep Spikes | Flag in registry but preserve raw spike values |
+
+Stateful: changing method updates graphs, statistics, and outlier registry in real time.
+
+### 16.4 CustomRangeSlider Component
+
+Replace all raw `<input type="range">` sliders with `CustomRangeSlider`:
+
+- Inline editable **min/max boundary** fields ("set limit" toggle)
+- Used for: SLA targets, ASA, shrinkage, anomaly sensitivity (1–3σ), class attrition, graduation throughput, capacity stress simulation
+
+Reference: `gemini-studio/src/components/CustomRangeSlider.tsx`
+
+### 16.5 Forecasting — Chat-Specified UX
+
+- Planning horizon buttons: 7-day, 30-day, 90-day, yearly
+- **Date FROM / TO pickers** alongside horizon presets (chat requirement — partial in reference source)
+- **Results popup** after "Run Forecast Computations" completes (chat requirement — not yet in source)
+- Cleansed data automatically feeds forecast on "Continue to Forecasting"
+
+### 16.6 Capacity Planning — Business Logic (from chat)
+
+**Starting point:** current manpower on the ground + monthly attrition %, compared against Erlang sizing requirements.
+
+**Worked example (from chat):**
+
+```
+Current HC:     100 staff
+Attrition:      10%/month
+Target req:     125 FTE
+Month-1 net:    100 × 90% = 90 active after attrition
+Deficit:        125 − 90 = 35 → must hire/source 35
+```
+
+**Pipeline after capacity approval:**
+
+1. Calculate sourcing volume accounting for training attrition, graduation throughput %, nesting lead time, class size, rooms, trainers
+2. If training capacity is insufficient → surface bottleneck warning; remainder covered via OT
+3. Once plan reaches target headcount (e.g., 125 FTE) → pass approved roster to **monthly shift scheduling**
+4. Run schedule against KPIs (SLA %, ASA, answer %) to validate achievement
+
+Reference implementation: `gemini-studio/src/components/CapacityPlanning.tsx`
+
+### 16.7 Scheduling → Simulation → Cost Chain
+
+- Approved capacity headcount drives roster generation (not raw Erlang peak alone)
+- Simulation uses rostered agents per interval/day-of-week against forecast volume
+- Cost module multiplies recruitment + training + base wages + OT penalty from sizing curves
+
+### 16.8 Known Bugs / Fixes Discussed in Chat
+
+| Issue | Status |
+|-------|--------|
+| **Elite SLA preset** highlights business hours incorrectly (shows 24h instead of AM/PM window) | Fix required — preset loader in `App.tsx` |
+| Quota limits during Gemini development iterations | N/A for shipped product |
+| Data lost on page refresh (repo `web/` app) | `localStorage` only saves profile — full pipeline state must be persisted |
+
+---
+
+## 17. Reference Source Architecture (`gemini-studio/`)
+
+Exported from AI Studio. React 19 + Vite 6 + TypeScript + Tailwind 4 + Recharts.
+
+```
+gemini-studio/
+├── src/
+│   ├── App.tsx                          # Global state, step nav, preset templates, certification
+│   ├── types.ts                         # Domain types (HistoricalRow, SizingResultRow, etc.)
+│   ├── components/
+│   │   ├── Dashboard.tsx                # Step 1: Profile Setup + presets
+│   │   ├── UploadCleansing.tsx          # Step 2: CSV ingest, cleansing, imputation
+│   │   ├── Forecasting.tsx              # Step 3: Horizon + model selection
+│   │   ├── SizingErlang.tsx             # Step 4: Erlang A/B/C + blended + workload
+│   │   ├── CapacityPlanning.tsx         # Step 5: Hiring roadmap + bottlenecks
+│   │   ├── Scheduling.tsx               # Step 6: Shift blueprints + roster
+│   │   ├── Simulation.tsx               # Step 7: Monte Carlo queue sim
+│   │   ├── CostAnalysis.tsx             # Step 8: Budget + Excel/CSV export
+│   │   └── CustomRangeSlider.tsx        # Shared adaptive slider
+│   └── utils/
+│       ├── cleansingUtils.ts            # Anomaly detection + imputation
+│       ├── forecastingUtils.ts          # 8 forecast models + auto-recommendation
+│       ├── mathUtils.ts                 # Erlang A/B/C, workload sizing, DES
+│       ├── aggregationUtils.ts          # Interval/daily/weekly rollups for charts
+│       └── excelExportUtils.ts          # Master plan Excel workbook generator
+├── package.json
+└── metadata.json
+```
+
+**Domain types** (`types.ts`): `HistoricalRow`, `ForecastRow`, `SizingResultRow`, `CapacityMonthlyPlan`, `ScheduleAssignment`, `SimulationResult`, `CostAnalysisReport`
+
+**Sizing pipeline** (`SizingResultRow`):
+
+```
+rawRequiredAgents → occupancyAdjusted → shrinkageAdjusted → finalRequiredAgents
+```
+
+---
+
+## 18. Gap Analysis — Updated (post source export)
+
+| Feature | Gemini source | Repo `web/` | Repo desktop `src/` |
+|---------|--------------|-------------|---------------------|
+| 8-step pipeline with Capacity Hiring | Yes | No (7 conceptual stages, no hiring) | No |
+| Multi-channel SLA (6 channels) | Yes | Partial (single profile) | Partial |
+| Preset templates | 4 | No | No |
+| CustomRangeSlider | Yes | No | No |
+| Optional CSV interval column | Yes | No | No |
+| Raw vs cleansed display | Yes | Partial | Partial |
+| 8 forecast models | Yes | Fewer | Fewer |
+| Capacity hiring roadmap | Yes | No | No |
+| Excel master plan export | Yes | No | Partial |
+| Full pipeline localStorage | In-memory only | Profile only | File-based |
+| Auto-certification useEffect | Yes | No | No |
+
+**Recommended next step:** Port `gemini-studio/` into `WFM-Planning-Suite/web/` as the primary web implementation, preserving offline-first constraints and adding full state persistence.
 
 ---
 
